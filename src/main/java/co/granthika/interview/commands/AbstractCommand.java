@@ -1,4 +1,7 @@
-package co.granthika.interview.store;
+package co.granthika.interview.commands;
+
+import co.granthika.interview.store.Store;
+import co.granthika.interview.store.StoreAware;
 
 public abstract class AbstractCommand implements StoreAware{
 	
@@ -7,7 +10,7 @@ public abstract class AbstractCommand implements StoreAware{
 		this.store = store;
 	}
 
-	public Store getStore() {
+	public synchronized Store getStore() {
 		return store;
 	}
 	

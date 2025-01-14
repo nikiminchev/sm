@@ -1,4 +1,4 @@
-package co.granthika.interview.store;
+package co.granthika.interview.commands;
 
 @SuppressWarnings("serial")
 public class CommandException extends RuntimeException{

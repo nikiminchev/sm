@@ -1,8 +1,16 @@
-package co.granthika.interview.store;
+package co.granthika.interview.workers;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+
+import co.granthika.interview.commands.AbstractCommand;
+import co.granthika.interview.commands.FillCommand;
+import co.granthika.interview.commands.MoveCommand;
+import co.granthika.interview.store.Container;
+import co.granthika.interview.store.ContainersPool;
+import co.granthika.interview.store.Store;
+import co.granthika.interview.store.TestStore;
 
 /**
  * Hello world!
@@ -14,39 +22,15 @@ public class Robot
     
 	private Stack<AbstractCommand> commands = new Stack<AbstractCommand>();
     
-    public Robot(int numContainers, int poolSize) {
-    	initStore(numContainers, poolSize);
-    	addContainers(numContainers);
+    public Robot(Store store) {
+    	this.store = store;
     }
     
-    private void initStore(int numContainers, int poolSize) {
-    	int places = numContainers/poolSize;
-    	while(places*poolSize<=(numContainers+poolSize)) {
-    		places++;
-    	}
-    	
-    	store = new Store(places, poolSize);
+    public Robot(ContainersPool[] containerRoom) {
+    	init(containerRoom);
     }
-    
-    private void addContainers(int numContainers) {
-    	List<Container> containers = new ArrayList<Container>();
-    	for(int i=0;i<numContainers; i++) {
-    		String name = "b"+i;
-    		Container container = new Container(name);
-    		containers.add(container);
-    	}
-    	
-    	for(Container container: containers) {
-    		store.addContainer(container);
-    	}
-    }
-    
-    
-    public Robot(ContainersPool[] containerRoom, int poolSize) {
-    	init(containerRoom, poolSize);
-    }
-    private void init(ContainersPool[] containerRoom, int poolSize) {
-    	store = new TestStore(containerRoom, poolSize);
+    private void init(ContainersPool[] containerRoom) {
+    	store = new TestStore(containerRoom);
     }
 
 	public AbstractCommand fill(String name, int fluid) {
@@ -89,5 +73,9 @@ public class Robot
 	@Override
 	public String toString() {
 		return store.toString();
+	}
+
+	public Store getStore() {
+		return store;
 	}
 }

@@ -2,22 +2,66 @@ package co.granthika.interview;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import co.granthika.interview.store.AbstractCommand;
+import co.granthika.interview.commands.AbstractCommand;
 import co.granthika.interview.store.Container;
 import co.granthika.interview.store.ContainersPool;
-import co.granthika.interview.store.Robot;
 import co.granthika.interview.store.Store;
+import co.granthika.interview.workers.Robot;
 
 public class TestRobot {
 
-	private static boolean DEBUG = true;
+	private static boolean DEBUG = false;
+	private  int numContainers=100000;
+	private static Store store = null;
+	private int poolSize = 7;
+	private static List<String> names = new ArrayList<String>();
 	
 	public static void main(String[] args) {
 		try {
 			Store.DEBUG_MODE = DEBUG;
+			
+			ExecutorService executor = Executors.newFixedThreadPool(8);
+
 			TestRobot tr = new TestRobot();
-			tr.test1();
+			Robot r0 = tr.initStore(tr.numContainers/1000);
+			store = r0.getStore();
+			executeTask(() -> {
+				System.err.println("1 start");
+				tr.test1(r0);
+				System.err.println("1 end");
+	        }, executor);
+			
+			executeTask(() -> {
+				Robot r = new Robot(store);
+				System.err.println("2 start");
+				tr.test1(r);
+				System.err.println("2 end");
+	        }, executor);
+			
+			executeTask(() -> {
+				Robot r = new Robot(store);
+				System.err.println("3 start");
+				tr.test1(r);
+				System.err.println("3 end");
+	        }, executor);
+			
+			executeTask(() -> {
+				Robot r = new Robot(store);
+				System.err.println("4 start");
+				tr.test1(r);
+				System.err.println("4 end");
+	        }, executor);
+			
+			executeTask(() -> {
+				Robot r = new Robot(store);
+				System.err.println("5 start");
+				tr.test1(r);
+				System.err.println("5 end");
+	        }, executor);
+
 //			tr.test2();
 //			tr.test3();
 //			tr.test4();
@@ -26,10 +70,101 @@ public class TestRobot {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+		System.exit(0);
 	}
-	void test1() {
-		int numContainers=24;
-		Robot robot = new Robot(numContainers, 3);
+	
+	Robot initStore(int numContainers){
+		Robot robot = null;
+		boolean create = true;
+		if(store==null) {
+			store =  new Store(numContainers, poolSize);
+		}
+		
+		robot = new Robot(store);
+		
+
+		numContainers = robot.getStore().getContainerRoom()[0].getPoolSize();
+		if(DEBUG) {
+			System.err.println("numPools="+numContainers);
+			System.err.println("pool:"+robot.getStore().toString());
+		}
+		if(create) {
+			create = false;
+			for(int i=0; i<numContainers; i++) {
+				names.add("b"+i);
+			}
+		}
+		
+		return robot;
+	}
+	void test1(Robot robot) {
+		long start = System.currentTimeMillis();
+		
+		try {
+			AbstractCommand command = null;
+			
+			numContainers = robot.getStore().getContainerRoom().length;
+
+			for(int k=0; k<100; k++) {
+				for(int i=0; i<100; i++) {
+
+					if(DEBUG) {
+						System.out.println("i="+i);
+						System.out.println(robot.toString());
+					}
+					int a = (int)(Math.random()*(poolSize-1));
+					int c = (int)(Math.random()*(poolSize-1));
+					double b = Math.random();
+					if(DEBUG) {
+						System.err.println("a="+a);
+						System.err.println("c="+c);
+						System.err.println("b="+b);
+					}
+					if(b>0.5) {
+						command = robot.fill(names.get(a), (int)(Math.random()*50));
+					}else {
+						if(a==c) {
+							return;
+						}
+						command = robot.move(names.get(a), names.get(c));
+					}
+					if(DEBUG) {
+						System.out.println(command.print());
+					}
+				}
+				
+				
+//				for(int i=0; i<30;i++) {
+//					if(DEBUG) {
+//						System.out.println("i="+i);
+//						System.out.println(robot.toString());
+//					}
+//					double b = Math.random();
+//					if(DEBUG) {
+//						System.out.println("b="+b);
+//					}
+//					if(b>0.5) {
+//						command = robot.undo();
+//					}else {
+//						command = robot.redo();
+//					}
+//					if(DEBUG) {
+//						System.out.println(command.print());
+//					}
+//				}
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			long end = System.currentTimeMillis();
+			System.out.println("numContainers="+robot.getStore().getContainerRoom().length);
+			printTime(start, end);
+		}
+	}
+
+	void test2(int numContainers) {
+		Store store = new Store(numContainers, poolSize);
+		Robot robot = new Robot(store);
 		List<String> names = new ArrayList<String>();
 		for(int i=0; i<numContainers; i++) {
 			names.add("b"+i);
@@ -83,63 +218,6 @@ public class TestRobot {
 //			}
 		}
 	}
-
-	void test2() {
-		int numContainers=25;
-		Robot robot = new Robot(numContainers, 3);
-		List<String> names = new ArrayList<String>();
-		for(int i=0; i<numContainers; i++) {
-			names.add("b"+i);
-		}
-		AbstractCommand command = null;
-		for(int k=0; k<100; k++) {
-			for(int i=0; i<100; i++) {
-				if(DEBUG) {
-					System.out.println("i="+i);
-					System.out.println(robot.toString());
-				}
-				int a = (int)(Math.random()*(numContainers-1));
-				int c = (int)(Math.random()*(numContainers-1));
-				double b = Math.random();
-				if(DEBUG) {
-					System.out.println("a="+a);
-					System.out.println("c="+c);
-					System.out.println("b="+b);
-				}
-				if(b>0.5) {
-					command = robot.fill(names.get(a), (int)(Math.random()*50));
-				}else {
-					if(a==c) {
-						continue;
-					}
-					command = robot.move(names.get(a), names.get(c));
-				}
-				if(DEBUG) {
-					System.out.println(command.print());
-				}
-			}
-			
-			
-			for(int i=0; i<30;i++) {
-				if(DEBUG) {
-					System.out.println("i="+i);
-					System.out.println(robot.toString());
-				}
-				double b = Math.random();
-				if(DEBUG) {
-					System.out.println("b="+b);
-				}
-				if(b>0.5) {
-					command = robot.undo();
-				}else {
-					command = robot.redo();
-				}
-				if(DEBUG) {
-					System.out.println(command.print());
-				}
-			}
-		}
-	}
 	
 	void test3() {
 		ContainersPool[] pool = new ContainersPool[10];
@@ -166,7 +244,7 @@ public class TestRobot {
 		pool[8].push(new Container("b8", 10));pool[8].push(new Container("b22", 38));
 		pool[9].push(new Container("b9", 45));pool[9].push(new Container("b18", 0));
 		
-		Robot robot = new Robot(pool, 3);
+		Robot robot = new Robot(pool);
 
 		if(DEBUG) {
 			System.out.println(robot.toString());
@@ -201,7 +279,7 @@ public class TestRobot {
 		pool[8].push( new Container("b8", 0));pool[8].push( new Container("b18", 0));
 		pool[9].push( new Container("b9", 0));pool[9].push( new Container("b19", 0));
 		
-		Robot robot = new Robot(pool, 3);
+		Robot robot = new Robot(pool);
 
 		if(DEBUG) {
 			System.out.println(robot.toString());
@@ -211,4 +289,51 @@ public class TestRobot {
 			System.out.println(robot.toString());
 		}
 	}
+	
+	void testPrintTime() {
+		long start = -1000L;
+		long end = System.currentTimeMillis();
+		printTime(start, end);
+	}
+	
+	protected void printTime(long start, long end) {
+		long time = end - start;
+		System.out.println(time);
+//		Long[] arr= {1000L, 60L, 60L, 24L, 30L, 365L, 100L, 1000L};
+//		String[] arr2 = {"", ".", ":", ":", " months ", " years ", "centy-years", " milleniums "};
+//		List<Long> periods = new ArrayList<Long>(arr.length);
+//		List<String> periodDelimiters = new ArrayList<String>(arr2.length);
+//		for(Long a: arr) {
+//			periods.add(a);
+//		}
+//		for(String a: arr2) {
+//			periodDelimiters.add(a);
+//		}
+//		List<Long> times = new ArrayList<Long>();
+//		Iterator<Long> arrIter = periods.iterator();
+//		long tail = time;
+//		long next = arrIter.next();
+//		do {
+//			arrIter.remove();
+//			time = tail/next; 
+//			tail = tail%next;
+//
+//			times.add(0, tail);
+//
+//			next = arrIter.next();
+//		}while(next<=time&&arrIter.hasNext());
+//		times.add(0, time);
+//		
+//		int i=-1;
+//		for(Long timeL: times) {
+//			i++;
+//			System.out.print(timeL);
+//			System.out.print(periodDelimiters.get(times.size()-i-1));
+//		}
+//		System.out.println();
+	}
+	
+	public static void executeTask(Runnable task, ExecutorService executor) {
+        executor.submit(task);
+    }
 }
