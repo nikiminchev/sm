@@ -38,8 +38,8 @@ public class MoveCommand extends AbstractCommand{
 			}
 			store.setVisitedTarget(targetPoolIndex);
 
-			int freeIndex = store.findFreePool(0);
 			if(sourcePoolIndex!=targetPoolIndex && !store.getContainerRoom()[sourcePoolIndex].isEmpty()) {
+				int freeIndex = store.findFreePool(0);
 				while(!store.isOnTop(source, sourcePoolIndex)) {
 					executeCommand(sourcePoolIndex, freeIndex);
 					freeIndex = store.findFreePool(freeIndex);
@@ -52,6 +52,7 @@ public class MoveCommand extends AbstractCommand{
 				executeCommand(sourcePoolIndex, targetPoolIndex);
 			}else {
 				if(sourcePoolIndex==targetPoolIndex) {
+					int freeIndex = store.findFreePool(0);
 					if(store.isOnTopOn(source, target)) {
 						return;
 					}else {
