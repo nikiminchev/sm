@@ -1,13 +1,10 @@
 package co.granthika.interview.workers;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 import co.granthika.interview.commands.AbstractCommand;
 import co.granthika.interview.commands.FillCommand;
 import co.granthika.interview.commands.MoveCommand;
-import co.granthika.interview.store.Container;
 import co.granthika.interview.store.ContainersPool;
 import co.granthika.interview.store.Store;
 import co.granthika.interview.store.TestStore;

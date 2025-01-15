@@ -26,47 +26,49 @@ public class MoveCommand extends AbstractCommand{
 		}
 		Store store = getStore();
 		synchronized (store) {
-			
-			int sourcePoolIndex = store.findContainerInRoom(source);
-			if(sourcePoolIndex<0) {
-				throw new IllegalArgumentException(source+" not found");
-			}
-			store.setVisitedSource(sourcePoolIndex);
-			int targetPoolIndex = store.findContainerInRoom(target);
-			if(targetPoolIndex<0) {
-				throw new IllegalArgumentException(target+" not found");
-			}
-			store.setVisitedTarget(targetPoolIndex);
+			synchronized (store.getContainerRoom()) {
+				int sourcePoolIndex = store.findContainerInRoom(source);
+				if(sourcePoolIndex<0) {
+					throw new IllegalArgumentException(source+" not found");
+				}
+				store.setVisitedSource(sourcePoolIndex);
+				int targetPoolIndex = store.findContainerInRoom(target);
+				if(targetPoolIndex<0) {
+					throw new IllegalArgumentException(target+" not found");
+				}
+				store.setVisitedTarget(targetPoolIndex);
 
-			int freeIndex = store.findFreePool(0);
-			if(sourcePoolIndex!=targetPoolIndex && !store.getContainerRoom()[sourcePoolIndex].isEmpty()) {
-				while(!store.isOnTop(source, sourcePoolIndex)) {
-					executeCommand(sourcePoolIndex, freeIndex);
-					freeIndex = store.findFreePool(freeIndex);
-				}
-				int freeIndex2 = store.findFreePool(0);
-				while(!store.isOnTop(target, targetPoolIndex)) {
-					executeCommand(targetPoolIndex, freeIndex2);
-					freeIndex2 = store.findFreePool(freeIndex2);
-				}
-				executeCommand(sourcePoolIndex, targetPoolIndex);
-			}else {
-				if(sourcePoolIndex==targetPoolIndex) {
-					if(store.isOnTopOn(source, target)) {
-						return;
-					}else {
-						executeCommand(targetPoolIndex, freeIndex);
-						store.removeVisitedTarget(targetPoolIndex);
-						MoveCommand newCommand = new MoveCommand(store);
-						newCommand.executeCommand(source, target);
+				if(sourcePoolIndex!=targetPoolIndex && !store.getContainerRoom()[sourcePoolIndex].isEmpty()) {
+					int freeIndex = store.findFreePool(0);
+					while(!store.isOnTop(source, sourcePoolIndex)) {
+						executeCommand(sourcePoolIndex, freeIndex);
+						freeIndex = store.findFreePool(freeIndex);
 					}
-				} else {
+					int freeIndex2 = store.findFreePool(0);
+					while(!store.isOnTop(target, targetPoolIndex)) {
+						executeCommand(targetPoolIndex, freeIndex2);
+						freeIndex2 = store.findFreePool(freeIndex2);
+					}
 					executeCommand(sourcePoolIndex, targetPoolIndex);
+				}else {
+					if(sourcePoolIndex==targetPoolIndex) {
+						int freeIndex = store.findFreePool(0);
+						if(store.isOnTopOn(source, target)) {
+							return;
+						}else {
+							executeCommand(targetPoolIndex, freeIndex);
+							store.removeVisitedTarget(targetPoolIndex);
+							MoveCommand newCommand = new MoveCommand(store);
+							newCommand.executeCommand(source, target);
+						}
+					} else {
+						executeCommand(sourcePoolIndex, targetPoolIndex);
+					}
 				}
-			}
-			if(Store.DEBUG_MODE) {
-				targetPoolIndex = store.findContainerInRoom(target);
-				System.out.println(store.getContainerRoom()[targetPoolIndex]);
+				if(Store.DEBUG_MODE) {
+					targetPoolIndex = store.findContainerInRoom(target);
+					System.out.println(store.getContainerRoom()[targetPoolIndex]);
+				}
 			}
 		}
 	}
@@ -74,12 +76,14 @@ public class MoveCommand extends AbstractCommand{
 	void executeCommand(int sourcePoolIndex, int targetPoolIndex) {
 		Store store = getStore();
 		synchronized (store) {
-			while(!store.hasFreePlace(targetPoolIndex)) {
-				int freeIndex = createFreePlace(store);
-				executeCommand(targetPoolIndex, freeIndex);
-				targetPoolIndex = freeIndex;
+			synchronized (store.getContainerRoom()) {
+				while(!store.hasFreePlace(targetPoolIndex)) {
+					int freeIndex = createFreePlace(store);
+					executeCommand(targetPoolIndex, freeIndex);
+					targetPoolIndex = freeIndex;
+				}
+				store.push( targetPoolIndex,getStore().pop(sourcePoolIndex));
 			}
-			store.push( targetPoolIndex,getStore().pop(sourcePoolIndex));
 		}
 	}
 	

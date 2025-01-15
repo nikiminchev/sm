@@ -1,6 +1,7 @@
 package co.granthika.interview;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,20 +19,27 @@ public class TestRobot {
 	private static Store store = null;
 	private int poolSize = 7;
 	private static List<String> names = new ArrayList<String>();
+	private static int threadCount;
+	private static final int NUM_THREADS = 6;
 	
 	public static void main(String[] args) {
 		try {
 			Store.DEBUG_MODE = DEBUG;
-			
-			ExecutorService executor = Executors.newFixedThreadPool(8);
+
+			threadCount=0;
+
+			ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
 
 			TestRobot tr = new TestRobot();
-			Robot r0 = tr.initStore(tr.numContainers/1000);
+			Robot r0 = tr.initStore(tr.numContainers);
 			store = r0.getStore();
 			executeTask(() -> {
 				System.err.println("1 start");
 				tr.test1(r0);
 				System.err.println("1 end");
+				synchronized(store) {
+					threadCount++;
+				}
 	        }, executor);
 			
 			executeTask(() -> {
@@ -39,6 +47,9 @@ public class TestRobot {
 				System.err.println("2 start");
 				tr.test1(r);
 				System.err.println("2 end");
+				synchronized(store) {
+					threadCount++;
+				}
 	        }, executor);
 			
 			executeTask(() -> {
@@ -46,6 +57,9 @@ public class TestRobot {
 				System.err.println("3 start");
 				tr.test1(r);
 				System.err.println("3 end");
+				synchronized(store) {
+					threadCount++;
+				}
 	        }, executor);
 			
 			executeTask(() -> {
@@ -53,6 +67,9 @@ public class TestRobot {
 				System.err.println("4 start");
 				tr.test1(r);
 				System.err.println("4 end");
+				synchronized(store) {
+					threadCount++;
+				}
 	        }, executor);
 			
 			executeTask(() -> {
@@ -60,6 +77,21 @@ public class TestRobot {
 				System.err.println("5 start");
 				tr.test1(r);
 				System.err.println("5 end");
+				synchronized(store) {
+					threadCount++;
+				}
+	        }, executor);
+			
+			executeTask(() -> {
+				while(threadCount<NUM_THREADS-1) {
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				System.exit(0);
 	        }, executor);
 
 //			tr.test2();
@@ -70,7 +102,7 @@ public class TestRobot {
 			e.printStackTrace();
 			System.exit(-1);
 		}
-		System.exit(0);
+//		System.exit(0);
 	}
 	
 	Robot initStore(int numContainers){
@@ -157,7 +189,7 @@ public class TestRobot {
 			e.printStackTrace();
 		} finally {
 			long end = System.currentTimeMillis();
-			System.out.println("numContainers="+robot.getStore().getContainerRoom().length);
+			System.out.println("Number of Container Pools="+robot.getStore().getContainerRoom().length);
 			printTime(start, end);
 		}
 	}
@@ -299,38 +331,38 @@ public class TestRobot {
 	protected void printTime(long start, long end) {
 		long time = end - start;
 		System.out.println(time);
-//		Long[] arr= {1000L, 60L, 60L, 24L, 30L, 365L, 100L, 1000L};
-//		String[] arr2 = {"", ".", ":", ":", " months ", " years ", "centy-years", " milleniums "};
-//		List<Long> periods = new ArrayList<Long>(arr.length);
-//		List<String> periodDelimiters = new ArrayList<String>(arr2.length);
-//		for(Long a: arr) {
-//			periods.add(a);
-//		}
-//		for(String a: arr2) {
-//			periodDelimiters.add(a);
-//		}
-//		List<Long> times = new ArrayList<Long>();
-//		Iterator<Long> arrIter = periods.iterator();
-//		long tail = time;
-//		long next = arrIter.next();
-//		do {
-//			arrIter.remove();
-//			time = tail/next; 
-//			tail = tail%next;
-//
-//			times.add(0, tail);
-//
-//			next = arrIter.next();
-//		}while(next<=time&&arrIter.hasNext());
-//		times.add(0, time);
-//		
-//		int i=-1;
-//		for(Long timeL: times) {
-//			i++;
+		Long[] arr= {1000L, 60L, 60L, 24L, 30L, 365L, 100L, 1000L};
+		String[] arr2 = {"", ".", ":", ":", " months ", " years ", "centy-years", " milleniums "};
+		List<Long> periods = new ArrayList<Long>(arr.length);
+		List<String> periodDelimiters = new ArrayList<String>(arr2.length);
+		for(Long a: arr) {
+			periods.add(a);
+		}
+		for(String a: arr2) {
+			periodDelimiters.add(a);
+		}
+		List<Long> times = new ArrayList<Long>();
+		Iterator<Long> arrIter = periods.iterator();
+		long tail = time;
+		long next = arrIter.next();
+		do {
+			arrIter.remove();
+			time = tail/next; 
+			tail = tail%next;
+
+			times.add(0, tail);
+
+			next = arrIter.next();
+		}while(next<=time&&arrIter.hasNext());
+		times.add(0, time);
+		
+		int i=-1;
+		for(Long timeL: times) {
+			i++;
 //			System.out.print(timeL);
-//			System.out.print(periodDelimiters.get(times.size()-i-1));
-//		}
-//		System.out.println();
+			System.out.print(periodDelimiters.get(times.size()-i-1));
+		}
+		System.out.println();
 	}
 	
 	public static void executeTask(Runnable task, ExecutorService executor) {
